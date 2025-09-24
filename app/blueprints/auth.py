@@ -2,6 +2,7 @@ from flask import Blueprint, render_template, request, redirect, url_for, flash,
 from flask_login import login_user, logout_user, login_required, current_user
 from werkzeug.security import generate_password_hash
 from app.models import User, Tenant
+from app.forms import LoginForm, RegisterForm, ProfileForm, ChangePasswordForm, ForgotPasswordForm, ResetPasswordForm
 from app.utils.tenant import get_current_tenant, tenant_required
 from app import db
 import secrets
@@ -14,21 +15,21 @@ bp = Blueprint('auth', __name__)
 def login():
     """User login"""
     tenant = get_current_tenant()
+    form = LoginForm()
     
     if current_user.is_authenticated:
         return redirect(url_for('dashboard.index'))
     
-    if request.method == 'POST':
-        email = request.form.get('email', '').strip().lower()
-        password = request.form.get('password', '')
-        remember = bool(request.form.get('remember'))
+    if form.validate_on_submit():
+        username_or_email = form.username.data.strip().lower()
+        password = form.password.data
+        remember = form.remember_me.data
         
-        if not email or not password:
-            flash('Please provide both email and password.', 'error')
-            return render_template('auth/login.html', tenant=tenant)
-        
-        # Find user in current tenant
-        user = User.for_tenant(tenant.id).filter_by(email=email, is_active=True).first()
+        # Find user by email or username in current tenant
+        user = User.for_tenant(tenant.id).filter(
+            (User.email == username_or_email) | 
+            (User.username == username_or_email)
+        ).filter_by(is_active=True).first()
         
         if user and user.check_password(password):
             login_user(user, remember=remember)
@@ -41,15 +42,16 @@ def login():
                 return redirect(next_page)
             return redirect(url_for('dashboard.index'))
         else:
-            flash('Invalid email or password.', 'error')
+            flash('Invalid username/email or password.', 'error')
     
-    return render_template('auth/login.html', tenant=tenant)
+    return render_template('auth/login.html', tenant=tenant, form=form)
 
 @bp.route('/register', methods=['GET', 'POST'])
 @tenant_required
 def register():
     """User registration"""
     tenant = get_current_tenant()
+    form = RegisterForm()
     
     if current_user.is_authenticated:
         return redirect(url_for('dashboard.index'))
@@ -57,58 +59,17 @@ def register():
     # Check if registration is allowed
     # For now, we'll allow registration but you might want to restrict this
     
-    if request.method == 'POST':
-        email = request.form.get('email', '').strip().lower()
-        username = request.form.get('username', '').strip()
-        first_name = request.form.get('first_name', '').strip()
-        last_name = request.form.get('last_name', '').strip()
-        password = request.form.get('password', '')
-        confirm_password = request.form.get('confirm_password', '')
-        
-        # Validation
-        errors = []
-        
-        if not email:
-            errors.append('Email is required.')
-        elif '@' not in email:
-            errors.append('Please provide a valid email address.')
-        
-        if not username:
-            errors.append('Username is required.')
-        elif len(username) < 3:
-            errors.append('Username must be at least 3 characters long.')
-        
-        if not password:
-            errors.append('Password is required.')
-        elif len(password) < 6:
-            errors.append('Password must be at least 6 characters long.')
-        
-        if password != confirm_password:
-            errors.append('Passwords do not match.')
-        
-        # Check if email already exists in this tenant
-        if email and User.for_tenant(tenant.id).filter_by(email=email).first():
-            errors.append('An account with this email already exists.')
-        
-        # Check if username already exists in this tenant
-        if username and User.for_tenant(tenant.id).filter_by(username=username).first():
-            errors.append('This username is already taken.')
-        
-        if errors:
-            for error in errors:
-                flash(error, 'error')
-            return render_template('auth/register.html', tenant=tenant)
-        
+    if form.validate_on_submit():
         # Create new user
         user = User(
             tenant_id=tenant.id,
-            email=email,
-            username=username,
-            first_name=first_name,
-            last_name=last_name,
+            email=form.email.data.lower(),
+            username=form.username.data.strip(),
+            first_name=form.first_name.data.strip(),
+            last_name=form.last_name.data.strip(),
             role='editor'  # Default role
         )
-        user.set_password(password)
+        user.set_password(form.password.data)
         
         db.session.add(user)
         db.session.commit()
@@ -116,7 +77,7 @@ def register():
         flash('Registration successful! You can now log in.', 'success')
         return redirect(url_for('auth.login'))
     
-    return render_template('auth/register.html', tenant=tenant)
+    return render_template('auth/register.html', tenant=tenant, form=form)
 
 @bp.route('/logout')
 @login_required
@@ -133,13 +94,11 @@ def profile():
     """User profile management"""
     tenant = get_current_tenant()
     user = current_user
+    form = ProfileForm(obj=user)
     
-    if request.method == 'POST':
+    if form.validate_on_submit():
         # Update profile information
-        user.first_name = request.form.get('first_name', '').strip()
-        user.last_name = request.form.get('last_name', '').strip()
-        user.bio = request.form.get('bio', '').strip()
-        user.website_url = request.form.get('website_url', '').strip()
+        form.populate_obj(user)
         
         # Validate website URL
         if user.website_url and not user.website_url.startswith(('http://', 'https://')):
@@ -149,7 +108,7 @@ def profile():
         flash('Profile updated successfully!', 'success')
         return redirect(url_for('auth.profile'))
     
-    return render_template('auth/profile.html', tenant=tenant, user=user)
+    return render_template('auth/profile.html', tenant=tenant, user=user, form=form)
 
 @bp.route('/change-password', methods=['GET', 'POST'])
 @login_required
@@ -158,42 +117,32 @@ def change_password():
     """Change user password"""
     tenant = get_current_tenant()
     user = current_user
+    form = ChangePasswordForm()
     
-    if request.method == 'POST':
-        current_password = request.form.get('current_password', '')
-        new_password = request.form.get('new_password', '')
-        confirm_password = request.form.get('confirm_password', '')
-        
+    if form.validate_on_submit():
         # Validation
-        if not user.check_password(current_password):
+        if not user.check_password(form.current_password.data):
             flash('Current password is incorrect.', 'error')
-        elif len(new_password) < 6:
-            flash('New password must be at least 6 characters long.', 'error')
-        elif new_password != confirm_password:
-            flash('New passwords do not match.', 'error')
         else:
-            user.set_password(new_password)
+            user.set_password(form.new_password.data)
             db.session.commit()
             flash('Password changed successfully!', 'success')
             return redirect(url_for('auth.profile'))
     
-    return render_template('auth/change_password.html', tenant=tenant)
+    return render_template('auth/change_password.html', tenant=tenant, form=form)
 
 @bp.route('/forgot-password', methods=['GET', 'POST'])
 @tenant_required
 def forgot_password():
     """Forgot password - request reset"""
     tenant = get_current_tenant()
+    form = ForgotPasswordForm()
     
     if current_user.is_authenticated:
         return redirect(url_for('dashboard.index'))
     
-    if request.method == 'POST':
-        email = request.form.get('email', '').strip().lower()
-        
-        if not email:
-            flash('Please provide your email address.', 'error')
-            return render_template('auth/forgot_password.html', tenant=tenant)
+    if form.validate_on_submit():
+        email = form.email.data.lower()
         
         user = User.for_tenant(tenant.id).filter_by(email=email, is_active=True).first()
         
@@ -213,13 +162,14 @@ def forgot_password():
         
         return redirect(url_for('auth.login'))
     
-    return render_template('auth/forgot_password.html', tenant=tenant)
+    return render_template('auth/forgot_password.html', tenant=tenant, form=form)
 
 @bp.route('/reset-password/<token>', methods=['GET', 'POST'])
 @tenant_required
 def reset_password(token):
     """Reset password with token"""
     tenant = get_current_tenant()
+    form = ResetPasswordForm()
     
     if current_user.is_authenticated:
         return redirect(url_for('dashboard.index'))
@@ -231,21 +181,13 @@ def reset_password(token):
         flash('Invalid or expired password reset link.', 'error')
         return redirect(url_for('auth.forgot_password'))
     
-    if request.method == 'POST':
-        password = request.form.get('password', '')
-        confirm_password = request.form.get('confirm_password', '')
+    if form.validate_on_submit():
+        user.set_password(form.password.data)
+        user.password_reset_token = None
+        user.password_reset_expires = None
+        db.session.commit()
         
-        if len(password) < 6:
-            flash('Password must be at least 6 characters long.', 'error')
-        elif password != confirm_password:
-            flash('Passwords do not match.', 'error')
-        else:
-            user.set_password(password)
-            user.password_reset_token = None
-            user.password_reset_expires = None
-            db.session.commit()
-            
-            flash('Password has been reset successfully. You can now log in.', 'success')
-            return redirect(url_for('auth.login'))
+        flash('Password has been reset successfully. You can now log in.', 'success')
+        return redirect(url_for('auth.login'))
     
-    return render_template('auth/reset_password.html', tenant=tenant, token=token)
+    return render_template('auth/reset_password.html', tenant=tenant, token=token, form=form)
