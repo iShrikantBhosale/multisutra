@@ -18,7 +18,8 @@ class Config:
     SQLALCHEMY_RECORD_QUERIES = True
     
     # File Upload Configuration
-    UPLOAD_FOLDER = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'static', 'uploads')
+    UPLOAD_FOLDER = os.environ.get('UPLOAD_FOLDER') or \
+        os.path.join(os.path.abspath(os.path.dirname(__file__)), 'static', 'uploads')
     MAX_CONTENT_LENGTH = int(os.environ.get('MAX_CONTENT_LENGTH', 16 * 1024 * 1024))  # 16MB
     ALLOWED_EXTENSIONS = set(os.environ.get('ALLOWED_EXTENSIONS', 
                             'png,jpg,jpeg,gif,pdf,doc,docx,mp4,mov').split(','))
@@ -94,15 +95,18 @@ class ProductionConfig(Config):
     def init_app(cls, app):
         Config.init_app(app)
         
-        # Initialize Sentry for error tracking
+        # Initialize Sentry for error tracking (optional)
         if cls.SENTRY_DSN:
-            import sentry_sdk
-            from sentry_sdk.integrations.flask import FlaskIntegration
-            sentry_sdk.init(
-                dsn=cls.SENTRY_DSN,
-                integrations=[FlaskIntegration()],
-                traces_sample_rate=0.1
-            )
+            try:
+                import sentry_sdk
+                from sentry_sdk.integrations.flask import FlaskIntegration
+                sentry_sdk.init(
+                    dsn=cls.SENTRY_DSN,
+                    integrations=[FlaskIntegration()],
+                    traces_sample_rate=0.1
+                )
+            except ImportError:
+                print("Warning: sentry_sdk not installed, skipping error tracking setup")
 
 config = {
     'development': DevelopmentConfig,
