@@ -9,34 +9,107 @@ import sys
 import traceback
 from app import create_app, db
 
-print(f"Starting MultiSutra CMS...")
+print(f"🚀 Starting MultiSutra CMS...")
 print(f"Python version: {sys.version}")
 print(f"Environment: {os.environ.get('FLASK_ENV', 'production')}")
 print(f"Database URL configured: {'Yes' if os.environ.get('DATABASE_URL') else 'No'}")
 
 try:
     # Create Flask application instance
+    print("Creating Flask app...")
     app = create_app(os.environ.get('FLASK_ENV', 'production'))
     print("✓ Flask app created successfully")
     
-    # Test database connection
+    # Test database connection and initialize if needed
+    print("Testing database connection...")
     with app.app_context():
-        db.engine.connect()
-        print("✓ Database connection successful")
+        try:
+            # Test basic connection
+            db.engine.connect()
+            print("✓ Database connection successful")
+            
+            # Try to query tenants table to see if it exists
+            from app.models.tenant import Tenant
+            tenant_count = Tenant.query.count()
+            print(f"✓ Found {tenant_count} tenants in database")
+            
+            # If no tenants exist, create a default one
+            if tenant_count == 0:
+                print("Creating default tenant...")
+                from datetime import datetime
+                tenant = Tenant(
+                    name='MultiSutra Blog',
+                    subdomain='main',
+                    domain=os.environ.get('MAIN_DOMAIN', 'multisutra.onrender.com'),
+                    is_active=True,
+                    created_at=datetime.utcnow()
+                )
+                db.session.add(tenant)
+                db.session.commit()
+                print("✓ Default tenant created")
+                
+        except Exception as db_error:
+            print(f"⚠️  Database issue detected: {db_error}")
+            print("Attempting to initialize database...")
+            
+            # Try to create all tables
+            db.create_all()
+            print("✓ Database tables created")
+            
+            # Create default tenant
+            from app.models.tenant import Tenant
+            from datetime import datetime
+            tenant = Tenant(
+                name='MultiSutra Blog',
+                subdomain='main',
+                domain=os.environ.get('MAIN_DOMAIN', 'multisutra.onrender.com'),
+                is_active=True,
+                created_at=datetime.utcnow()
+            )
+            db.session.add(tenant)
+            db.session.commit()
+            print("✓ Database initialized with default tenant")
         
+    print("🎉 App initialization completed successfully!")
+    
 except Exception as e:
-    print(f"❌ Error during app initialization: {e}")
+    print(f"❌ Critical error during app initialization: {e}")
     traceback.print_exc()
-    # Create a minimal app that can at least respond
-    from flask import Flask, jsonify
+    
+    # Create a minimal error app that can at least respond
+    print("Creating minimal error response app...")
+    from flask import Flask, jsonify, render_template_string
     app = Flask(__name__)
+    
+    error_html = """
+    <!DOCTYPE html>
+    <html>
+    <head><title>MultiSutra CMS - Initialization Error</title></head>
+    <body style="font-family: Arial; max-width: 600px; margin: 50px auto; padding: 20px;">
+        <h1>🚧 MultiSutra CMS - Setup Required</h1>
+        <p><strong>Error:</strong> {{ error_message }}</p>
+        <p>The application encountered an initialization error. This usually means:</p>
+        <ul>
+            <li>Database is not accessible</li>
+            <li>Required environment variables are missing</li>
+            <li>First-time setup is needed</li>
+        </ul>
+        <p><a href="/debug">View Debug Information</a></p>
+    </body>
+    </html>
+    """
     
     @app.route('/')
     def error_info():
+        return render_template_string(error_html, error_message=str(e))
+    
+    @app.route('/debug')
+    def debug_info():
         return jsonify({
-            'error': 'App initialization failed',
-            'message': str(e),
-            'environment': os.environ.get('FLASK_ENV', 'unknown')
+            'error': str(e),
+            'environment': os.environ.get('FLASK_ENV', 'unknown'),
+            'database_url': 'CONFIGURED' if os.environ.get('DATABASE_URL') else 'MISSING',
+            'port': os.environ.get('PORT', 'not set')
         })
     
     @app.route('/health')
