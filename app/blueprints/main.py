@@ -8,6 +8,15 @@ from datetime import datetime
 
 bp = Blueprint('main', __name__)
 
+@bp.route('/health')
+def health_check():
+    """Health check endpoint for deployment platforms"""
+    return jsonify({
+        'status': 'healthy',
+        'timestamp': datetime.utcnow().isoformat(),
+        'service': 'multisutra-cms'
+    }), 200
+
 @bp.before_app_request
 def before_request():
     """Set tenant context for each request"""

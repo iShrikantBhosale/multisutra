@@ -98,7 +98,6 @@ class Tenant(db.Model):
 # Import models to establish relationships
 from app.models.user import User
 from app.models.post import Post
-from app.models.category import Category
-from app.models.tag import Tag
+from app.models.category import Category, Tag
 from app.models.media import MediaFile
 from app.models.setting import Setting
