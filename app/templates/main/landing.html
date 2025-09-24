@@ -1,0 +1,79 @@
+{% extends "base/layout.html" %}
+
+{% block title %}Welcome to MultiSutra CMS{% endblock %}
+
+{% block main_content %}
+<div class="text-center py-5">
+    <div class="container">
+        <h1 class="display-4 fw-bold text-gradient mb-4">MultiSutra CMS</h1>
+        <p class="lead mb-5">A powerful multi-tenant content management system built with Flask</p>
+        
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <div class="card shadow">
+                    <div class="card-body p-5">
+                        <h3 class="mb-4">Get Started</h3>
+                        <p class="mb-4">Choose a subdomain to access your blog or create a new one:</p>
+                        
+                        <div class="mb-4">
+                            <label for="subdomain" class="form-label">Enter subdomain:</label>
+                            <div class="input-group input-group-lg">
+                                <input type="text" class="form-control" id="subdomain" placeholder="myblog">
+                                <span class="input-group-text">.multisutra.com</span>
+                                <button class="btn btn-primary" type="button" onclick="visitSubdomain()">
+                                    <i class="fas fa-arrow-right"></i> Go
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="row text-center">
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <i class="fas fa-users fa-2x text-primary mb-2"></i>
+                                    <h5>Multi-Tenant</h5>
+                                    <p class="small text-muted">Separate blogs for each subdomain</p>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <i class="fas fa-edit fa-2x text-primary mb-2"></i>
+                                    <h5>Rich Editor</h5>
+                                    <p class="small text-muted">WYSIWYG content creation</p>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <i class="fas fa-search fa-2x text-primary mb-2"></i>
+                                    <h5>SEO Ready</h5>
+                                    <p class="small text-muted">Built-in SEO optimization</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function visitSubdomain() {
+    var subdomain = document.getElementById('subdomain').value.trim();
+    if (subdomain) {
+        // Basic subdomain validation
+        if (subdomain.match(/^[a-zA-Z0-9-]+$/)) {
+            window.location.href = 'https://' + subdomain + '.multisutra.com';
+        } else {
+            alert('Please enter a valid subdomain (letters, numbers, and hyphens only)');
+        }
+    }
+}
+
+// Allow Enter key to submit
+document.getElementById('subdomain').addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') {
+        visitSubdomain();
+    }
+});
+</script>
+{% endblock %}

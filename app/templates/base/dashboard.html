@@ -1,0 +1,190 @@
+{% extends "base/layout.html" %}
+
+{% block title %}Dashboard - {{ current_tenant.title }}{% endblock %}
+
+{% block body_class %}dashboard{% endblock %}
+
+{% block navbar %}
+<nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+    <div class="container-fluid">
+        <a class="navbar-brand fw-bold" href="{{ url_for('dashboard.index') }}">
+            <i class="fas fa-tachometer-alt me-2"></i>
+            Dashboard
+        </a>
+        
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#dashboardNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        
+        <div class="collapse navbar-collapse" id="dashboardNav">
+            <ul class="navbar-nav me-auto">
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ url_for('dashboard.posts') }}">
+                        <i class="fas fa-file-alt me-1"></i> Posts
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ url_for('dashboard.media') }}">
+                        <i class="fas fa-images me-1"></i> Media
+                    </a>
+                </li>
+                {% if current_user.is_admin() %}
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ url_for('dashboard.categories') }}">
+                        <i class="fas fa-tags me-1"></i> Categories
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ url_for('dashboard.users') }}">
+                        <i class="fas fa-users me-1"></i> Users
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ url_for('dashboard.settings') }}">
+                        <i class="fas fa-cog me-1"></i> Settings
+                    </a>
+                </li>
+                {% endif %}
+            </ul>
+            
+            <ul class="navbar-nav">
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ url_for('main.index') }}" target="_blank">
+                        <i class="fas fa-external-link-alt me-1"></i> View Site
+                    </a>
+                </li>
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                        <img src="{{ current_user.get_avatar_url(24) }}" alt="{{ current_user.display_name }}" class="rounded-circle me-1" width="24" height="24">
+                        {{ current_user.display_name }}
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        <li><a class="dropdown-item" href="{{ url_for('auth.profile') }}">Profile</a></li>
+                        <li><a class="dropdown-item" href="{{ url_for('auth.change_password') }}">Change Password</a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item" href="{{ url_for('auth.logout') }}">Logout</a></li>
+                    </ul>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Sidebar -->
+            <nav class="col-md-3 col-lg-2 d-md-block bg-light sidebar collapse">
+                <div class="position-sticky pt-3">
+                    <ul class="nav flex-column">
+                        <li class="nav-item">
+                            <a class="nav-link {{ 'active' if request.endpoint == 'dashboard.index' }}" href="{{ url_for('dashboard.index') }}">
+                                <i class="fas fa-home me-2"></i>
+                                Dashboard
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {{ 'active' if request.endpoint.startswith('dashboard.posts') or request.endpoint == 'dashboard.new_post' or request.endpoint == 'dashboard.edit_post' }}" href="{{ url_for('dashboard.posts') }}">
+                                <i class="fas fa-file-alt me-2"></i>
+                                Posts
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {{ 'active' if request.endpoint == 'dashboard.media' }}" href="{{ url_for('dashboard.media') }}">
+                                <i class="fas fa-images me-2"></i>
+                                Media
+                            </a>
+                        </li>
+                        {% if current_user.is_admin() %}
+                        <li class="nav-item">
+                            <a class="nav-link {{ 'active' if request.endpoint == 'dashboard.categories' }}" href="{{ url_for('dashboard.categories') }}">
+                                <i class="fas fa-tags me-2"></i>
+                                Categories
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {{ 'active' if request.endpoint == 'dashboard.users' }}" href="{{ url_for('dashboard.users') }}">
+                                <i class="fas fa-users me-2"></i>
+                                Users
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link {{ 'active' if request.endpoint == 'dashboard.settings' }}" href="{{ url_for('dashboard.settings') }}">
+                                <i class="fas fa-cog me-2"></i>
+                                Settings
+                            </a>
+                        </li>
+                        {% endif %}
+                    </ul>
+                    
+                    <h6 class="sidebar-heading d-flex justify-content-between align-items-center px-3 mt-4 mb-1 text-muted">
+                        <span>Quick Actions</span>
+                    </h6>
+                    <ul class="nav flex-column mb-2">
+                        <li class="nav-item">
+                            <a class="nav-link text-success" href="{{ url_for('dashboard.new_post') }}">
+                                <i class="fas fa-plus me-2"></i>
+                                New Post
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('main.index') }}" target="_blank">
+                                <i class="fas fa-external-link-alt me-2"></i>
+                                View Site
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </nav>
+            
+            <!-- Main Content -->
+            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
+                {% block dashboard_content %}{% endblock %}
+            </main>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.sidebar {
+    box-shadow: inset -1px 0 0 rgba(0, 0, 0, .1);
+    min-height: calc(100vh - 56px);
+}
+
+.sidebar .nav-link {
+    font-weight: 500;
+    color: #333;
+    padding: 0.75rem 1rem;
+}
+
+.sidebar .nav-link:hover {
+    color: #007bff;
+    background-color: rgba(0, 123, 255, 0.1);
+}
+
+.sidebar .nav-link.active {
+    color: #007bff;
+    background-color: rgba(0, 123, 255, 0.1);
+    border-right: 3px solid #007bff;
+}
+
+.sidebar-heading {
+    font-size: .75rem;
+    text-transform: uppercase;
+}
+
+.dashboard-container {
+    min-height: calc(100vh - 56px);
+}
+
+@media (max-width: 767.98px) {
+    .sidebar {
+        min-height: auto;
+    }
+}
+</style>
+{% endblock %}
