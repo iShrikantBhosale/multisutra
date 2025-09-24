@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, jsonify, current_app
+from flask import Blueprint, render_template, request, jsonify, current_app, url_for
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from app.utils.tenant import get_current_tenant, tenant_required
@@ -16,6 +16,83 @@ def health_check():
         'timestamp': datetime.utcnow().isoformat(),
         'service': 'multisutra-cms'
     }), 200
+
+@bp.route('/setup', methods=['GET', 'POST'])
+def quick_setup():
+    """Quick setup for first-time deployment"""
+    from app.models.tenant import Tenant
+    from app.models.user import User
+    
+    if request.method == 'POST':
+        # Create default tenant if it doesn't exist
+        tenant = Tenant.query.filter_by(subdomain='blog').first()
+        if not tenant:
+            tenant = Tenant(
+                name='My Blog',
+                subdomain='blog',
+                domain=request.host.split('.')[1:] if '.' in request.host else request.host,
+                is_active=True,
+                created_at=datetime.utcnow()
+            )
+            db.session.add(tenant)
+            db.session.commit()
+        
+        # Create admin user
+        email = request.form.get('email', 'admin@example.com')
+        password = request.form.get('password', 'admin123')
+        
+        existing_user = User.for_tenant(tenant.id).filter_by(email=email).first()
+        if not existing_user:
+            admin_user = User(
+                email=email,
+                username='admin',
+                first_name='Admin',
+                last_name='User',
+                tenant_id=tenant.id,
+                role='admin',
+                is_active=True
+            )
+            admin_user.set_password(password)
+            db.session.add(admin_user)
+            db.session.commit()
+            
+            return jsonify({
+                'message': 'Setup completed successfully!',
+                'tenant': tenant.name,
+                'login_url': url_for('auth.login'),
+                'dashboard_url': url_for('dashboard.index'),
+                'email': email
+            })
+        else:
+            return jsonify({'message': 'Setup already completed', 'login_url': url_for('auth.login')})
+    
+    return '''
+    <html>
+    <head><title>MultiSutra CMS - Quick Setup</title></head>
+    <body style="font-family: Arial, sans-serif; max-width: 500px; margin: 50px auto; padding: 20px;">
+        <h1>🚀 MultiSutra CMS Setup</h1>
+        <p>Set up your blog and admin account:</p>
+        <form method="POST">
+            <div style="margin-bottom: 15px;">
+                <label>Admin Email:</label><br>
+                <input type="email" name="email" value="admin@example.com" required style="width: 100%; padding: 8px; margin-top: 5px;">
+            </div>
+            <div style="margin-bottom: 15px;">
+                <label>Admin Password:</label><br>
+                <input type="password" name="password" value="admin123" required style="width: 100%; padding: 8px; margin-top: 5px;">
+            </div>
+            <button type="submit" style="background: #007cba; color: white; padding: 10px 20px; border: none; cursor: pointer;">
+                Create Blog & Admin Account
+            </button>
+        </form>
+        <p style="margin-top: 30px; color: #666; font-size: 14px;">
+            After setup, you can access:<br>
+            • <a href="/auth/login">Login Page</a><br>
+            • <a href="/dashboard/">Dashboard</a>
+        </p>
+    </body>
+    </html>
+    '''
 
 @bp.before_app_request
 def before_request():

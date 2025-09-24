@@ -1,0 +1,13 @@
+# Render deployment configuration - DEBUG VERSION
+
+services:
+  - type: web
+    name: multisutra-debug
+    env: python
+    buildCommand: "pip install flask gunicorn"
+    startCommand: "gunicorn --bind 0.0.0.0:$PORT --workers 1 --worker-class sync --timeout 30 --access-logfile - --error-logfile - debug_app:app"
+    envVars:
+      - key: FLASK_ENV
+        value: production
+      - key: SECRET_KEY
+        generateValue: true

@@ -5,10 +5,43 @@ This file creates and configures the Flask application instance.
 """
 
 import os
+import sys
+import traceback
 from app import create_app, db
 
-# Create Flask application instance
-app = create_app(os.environ.get('FLASK_ENV', 'production'))
+print(f"Starting MultiSutra CMS...")
+print(f"Python version: {sys.version}")
+print(f"Environment: {os.environ.get('FLASK_ENV', 'production')}")
+print(f"Database URL configured: {'Yes' if os.environ.get('DATABASE_URL') else 'No'}")
+
+try:
+    # Create Flask application instance
+    app = create_app(os.environ.get('FLASK_ENV', 'production'))
+    print("✓ Flask app created successfully")
+    
+    # Test database connection
+    with app.app_context():
+        db.engine.connect()
+        print("✓ Database connection successful")
+        
+except Exception as e:
+    print(f"❌ Error during app initialization: {e}")
+    traceback.print_exc()
+    # Create a minimal app that can at least respond
+    from flask import Flask, jsonify
+    app = Flask(__name__)
+    
+    @app.route('/')
+    def error_info():
+        return jsonify({
+            'error': 'App initialization failed',
+            'message': str(e),
+            'environment': os.environ.get('FLASK_ENV', 'unknown')
+        })
+    
+    @app.route('/health')
+    def health():
+        return jsonify({'status': 'error', 'message': 'App failed to initialize properly'})
 
 # CLI commands for database initialization
 @app.cli.command()
