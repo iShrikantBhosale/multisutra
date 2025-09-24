@@ -1,30 +1,30 @@
 <!-- Render Field Component -->
-{% macro render_field(field, label_visible=True, help_text="", placeholder="", **kwargs) -%}
+{% macro render_field(field, label_visible=True, help_text="", placeholder="", extra_class="", rows=4, accept="") -%}
     <div class="mb-3">
         {% if label_visible and field.label %}
             {{ field.label(class="form-label") }}
         {% endif %}
         
-        {% set css_class = kwargs.pop('class', 'form-control') %}
+        {% set css_class = extra_class or 'form-control' %}
         {% if field.errors %}
             {% set css_class = css_class + ' is-invalid' %}
         {% endif %}
         
         {% if field.type == 'TextAreaField' %}
-            {{ field(class=css_class, placeholder=placeholder, rows=kwargs.get('rows', 4), **kwargs) }}
+            {{ field(class=css_class, placeholder=placeholder, rows=rows) }}
         {% elif field.type == 'SelectField' %}
-            {{ field(class='form-select' if 'form-control' in css_class else css_class, **kwargs) }}
+            {{ field(class='form-select' if 'form-control' in css_class else css_class) }}
         {% elif field.type == 'BooleanField' %}
             <div class="form-check">
-                {{ field(class="form-check-input", **kwargs) }}
+                {{ field(class="form-check-input") }}
                 {% if field.label %}
                     {{ field.label(class="form-check-label") }}
                 {% endif %}
             </div>
         {% elif field.type == 'FileField' %}
-            {{ field(class='form-control', accept=kwargs.get('accept', ''), **kwargs) }}
+            {{ field(class='form-control', accept=accept) }}
         {% else %}
-            {{ field(class=css_class, placeholder=placeholder, **kwargs) }}
+            {{ field(class=css_class, placeholder=placeholder) }}
         {% endif %}
         
         {% if help_text %}
@@ -60,7 +60,7 @@
 {%- endmacro %}
 
 <!-- Input Group Component -->
-{% macro input_group(field, prepend="", append="", **kwargs) -%}
+{% macro input_group(field, prepend="", append="", extra_class="") -%}
     <div class="mb-3">
         {% if field.label %}
             {{ field.label(class="form-label") }}
@@ -71,12 +71,12 @@
                 <span class="input-group-text">{{ prepend | safe }}</span>
             {% endif %}
             
-            {% set css_class = kwargs.pop('class', 'form-control') %}
+            {% set css_class = extra_class or 'form-control' %}
             {% if field.errors %}
                 {% set css_class = css_class + ' is-invalid' %}
             {% endif %}
             
-            {{ field(class=css_class, **kwargs) }}
+            {{ field(class=css_class) }}
             
             {% if append %}
                 <span class="input-group-text">{{ append | safe }}</span>
@@ -102,18 +102,18 @@
 {%- endmacro %}
 
 <!-- File Upload Component -->
-{% macro file_upload(field, accept="", multiple=False, preview=False, **kwargs) -%}
+{% macro file_upload(field, accept="", multiple=False, preview=False, extra_class="") -%}
     <div class="mb-3">
         {% if field.label %}
             {{ field.label(class="form-label") }}
         {% endif %}
         
-        {% set css_class = kwargs.pop('class', 'form-control') %}
+        {% set css_class = extra_class or 'form-control' %}
         {% if field.errors %}
             {% set css_class = css_class + ' is-invalid' %}
         {% endif %}
         
-        {{ field(class=css_class, accept=accept, multiple=multiple, **kwargs) }}
+        {{ field(class=css_class, accept=accept, multiple=multiple) }}
         
         {% if preview %}
             <div class="mt-2" id="file-preview-{{ field.name }}" style="display: none;">
@@ -148,18 +148,18 @@
 {%- endmacro %}
 
 <!-- Rich Text Editor Component -->
-{% macro rich_text_editor(field, height="300px", **kwargs) -%}
+{% macro rich_text_editor(field, height="300px", extra_class="") -%}
     <div class="mb-3">
         {% if field.label %}
             {{ field.label(class="form-label") }}
         {% endif %}
         
-        {% set css_class = kwargs.pop('class', 'form-control') %}
+        {% set css_class = extra_class or 'form-control' %}
         {% if field.errors %}
             {% set css_class = css_class + ' is-invalid' %}
         {% endif %}
         
-        {{ field(class=css_class, style="height: " + height, **kwargs) }}
+        {{ field(class=css_class, style="height: " + height) }}
         
         {% if field.errors %}
             {% for error in field.errors %}
