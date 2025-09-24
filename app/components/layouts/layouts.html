@@ -1,0 +1,333 @@
+<!-- Layout Components -->
+<!-- Main layout structure for the blog CMS -->
+
+{% macro base_layout(title="Blog CMS", description="", keywords="", include_editor=False) %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    
+    <title>{{ title }}</title>
+    {% if description %}
+        <meta name="description" content="{{ description }}">
+    {% endif %}
+    {% if keywords %}
+        <meta name="keywords" content="{{ keywords }}">
+    {% endif %}
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    
+    {% if include_editor %}
+        <!-- Quill Editor CSS -->
+        <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
+    {% endif %}
+    
+    <!-- Custom CSS -->
+    <link href="{{ url_for('static', filename='css/style.css') }}" rel="stylesheet">
+    
+    {% block extra_head %}{% endblock %}
+</head>
+<body>
+    {{ caller() }}
+    
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    {% if include_editor %}
+        <!-- Quill Editor JS -->
+        <script src="https://cdn.quilljs.com/1.3.6/quill.min.js"></script>
+    {% endif %}
+    
+    <!-- Custom JS -->
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+    
+    {% block extra_scripts %}{% endblock %}
+</body>
+</html>
+{% endmacro %}
+
+<!-- Dashboard Layout -->
+{% macro dashboard_layout(title="Dashboard", active_page="") %}
+  {% call base_layout(title=title, include_editor=True) %}
+    <!-- Dashboard Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="{{ url_for('dashboard.index') }}">
+                <i class="fas fa-blog"></i> Blog CMS
+            </a>
+            
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link {{ 'active' if active_page == 'dashboard' else '' }}" 
+                           href="{{ url_for('dashboard.index') }}">
+                            <i class="fas fa-tachometer-alt"></i> Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {{ 'active' if active_page == 'posts' else '' }}" 
+                           href="{{ url_for('dashboard.posts') }}">
+                            <i class="fas fa-file-alt"></i> Posts
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {{ 'active' if active_page == 'categories' else '' }}" 
+                           href="{{ url_for('dashboard.categories') }}">
+                            <i class="fas fa-tags"></i> Categories
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {{ 'active' if active_page == 'media' else '' }}" 
+                           href="{{ url_for('dashboard.media') }}">
+                            <i class="fas fa-images"></i> Media
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {{ 'active' if active_page == 'comments' else '' }}" 
+                           href="{{ url_for('dashboard.comments') }}">
+                            <i class="fas fa-comments"></i> Comments
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {{ 'active' if active_page == 'settings' else '' }}" 
+                           href="{{ url_for('dashboard.settings') }}">
+                            <i class="fas fa-cog"></i> Settings
+                        </a>
+                    </li>
+                </ul>
+                
+                <ul class="navbar-nav">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('blog.index') }}" target="_blank">
+                            <i class="fas fa-external-link-alt"></i> View Site
+                        </a>
+                    </li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="userDropdown" 
+                           data-bs-toggle="dropdown">
+                            <i class="fas fa-user"></i> {{ current_user.full_name }}
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="{{ url_for('auth.profile') }}">
+                                <i class="fas fa-user-edit"></i> Profile
+                            </a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="{{ url_for('auth.logout') }}">
+                                <i class="fas fa-sign-out-alt"></i> Logout
+                            </a></li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+    
+    <!-- Main Content -->
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Sidebar -->
+            <div class="col-md-2 bg-light sidebar">
+                <div class="position-sticky pt-3">
+                    {{ sidebar_nav(active_page) }}
+                </div>
+            </div>
+            
+            <!-- Main Content Area -->
+            <main class="col-md-10 ms-sm-auto px-md-4">
+                <div class="py-4">
+                    <!-- Flash Messages -->
+                    {% with messages = get_flashed_messages(with_categories=true) %}
+                        {% if messages %}
+                            {% for category, message in messages %}
+                                <div class="alert alert-{{ 'danger' if category == 'error' else category }} alert-dismissible fade show">
+                                    {{ message }}
+                                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+                    {% endwith %}
+                    
+                    {{ caller() }}
+                </div>
+            </main>
+        </div>
+    </div>
+  {% endcall %}
+{% endmacro %}
+
+<!-- Blog Layout -->
+{% macro blog_layout(title="Blog", description="", show_sidebar=True) %}
+  {% call base_layout(title=title, description=description) %}
+    <!-- Blog Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+        <div class="container">
+            <a class="navbar-brand" href="{{ url_for('blog.index') }}">
+                <i class="fas fa-blog"></i> My Blog
+            </a>
+            
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#blogNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            
+            <div class="collapse navbar-collapse" id="blogNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('blog.index') }}">Home</a>
+                    </li>
+                    {% for category in get_categories() %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{{ url_for('blog.category', slug=category.slug) }}">
+                                {{ category.name }}
+                            </a>
+                        </li>
+                    {% endfor %}
+                </ul>
+                
+                <!-- Search Form -->
+                <form class="d-flex" method="GET" action="{{ url_for('blog.search') }}">
+                    <input class="form-control me-2" type="search" name="q" placeholder="Search posts...">
+                    <button class="btn btn-outline-primary" type="submit">
+                        <i class="fas fa-search"></i>
+                    </button>
+                </form>
+            </div>
+        </div>
+    </nav>
+    
+    <!-- Main Content -->
+    <div class="container my-4">
+        {% if show_sidebar %}
+            <div class="row">
+                <div class="col-lg-8">
+                    {{ caller() }}
+                </div>
+                <div class="col-lg-4">
+                    {{ blog_sidebar() }}
+                </div>
+            </div>
+        {% else %}
+            {{ caller() }}
+        {% endif %}
+    </div>
+    
+    <!-- Footer -->
+    <footer class="bg-dark text-light py-4 mt-5">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-6">
+                    <p>&copy; 2025 My Blog. All rights reserved.</p>
+                </div>
+                <div class="col-md-6 text-end">
+                    <a href="{{ url_for('blog.rss_feed') }}" class="text-light me-3">
+                        <i class="fas fa-rss"></i> RSS
+                    </a>
+                    <a href="{{ url_for('auth.login') }}" class="text-light">
+                        <i class="fas fa-sign-in-alt"></i> Admin
+                    </a>
+                </div>
+            </div>
+        </div>
+    </footer>
+  {% endcall %}
+{% endmacro %}
+
+<!-- Sidebar Navigation for Dashboard -->
+{% macro sidebar_nav(active_page="") %}
+    <ul class="nav flex-column">
+        <li class="nav-item">
+            <a class="nav-link {{ 'active' if active_page == 'dashboard' else '' }}" 
+               href="{{ url_for('dashboard.index') }}">
+                <i class="fas fa-tachometer-alt"></i> Dashboard
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link {{ 'active' if active_page == 'posts' else '' }}" 
+               href="{{ url_for('dashboard.posts') }}">
+                <i class="fas fa-file-alt"></i> Posts
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" href="{{ url_for('dashboard.new_post') }}">
+                <i class="fas fa-plus"></i> New Post
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link {{ 'active' if active_page == 'categories' else '' }}" 
+               href="{{ url_for('dashboard.categories') }}">
+                <i class="fas fa-tags"></i> Categories
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link {{ 'active' if active_page == 'media' else '' }}" 
+               href="{{ url_for('dashboard.media') }}">
+                <i class="fas fa-images"></i> Media Library
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link {{ 'active' if active_page == 'comments' else '' }}" 
+               href="{{ url_for('dashboard.comments') }}">
+                <i class="fas fa-comments"></i> Comments
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link {{ 'active' if active_page == 'settings' else '' }}" 
+               href="{{ url_for('dashboard.settings') }}">
+                <i class="fas fa-cog"></i> Settings
+            </a>
+        </li>
+    </ul>
+{% endmacro %}
+
+<!-- Blog Sidebar -->
+{% macro blog_sidebar() %}
+    <!-- Recent Posts Widget -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="mb-0"><i class="fas fa-clock"></i> Recent Posts</h5>
+        </div>
+        <div class="card-body">
+            {% for post in get_recent_posts(5) %}
+                <div class="mb-2">
+                    <a href="{{ url_for('blog.post', slug=post.slug) }}" class="text-decoration-none">
+                        <h6 class="mb-1">{{ post.title }}</h6>
+                    </a>
+                    <small class="text-muted">{{ post.published_at.strftime('%B %d, %Y') }}</small>
+                </div>
+                {% if not loop.last %}<hr class="my-2">{% endif %}
+            {% endfor %}
+        </div>
+    </div>
+    
+    <!-- Categories Widget -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="mb-0"><i class="fas fa-tags"></i> Categories</h5>
+        </div>
+        <div class="card-body">
+            {% for category in get_categories() %}
+                <a href="{{ url_for('blog.category', slug=category.slug) }}" 
+                   class="badge bg-primary text-decoration-none me-1 mb-1">
+                    {{ category.name }}
+                </a>
+            {% endfor %}
+        </div>
+    </div>
+    
+    <!-- Archives Widget -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="mb-0"><i class="fas fa-archive"></i> Archives</h5>
+        </div>
+        <div class="card-body">
+            <!-- Archives would be populated by a helper function -->
+            <small class="text-muted">Archives coming soon...</small>
+        </div>
+    </div>
+{% endmacro %}

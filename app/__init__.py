@@ -42,7 +42,7 @@ def create_app(config_name='default'):
     # User loader for Flask-Login
     @login_manager.user_loader
     def load_user(user_id):
-        from app.models.user import User
+        from app.models import User
         return User.query.get(int(user_id))
     
     # Create upload directories
@@ -62,53 +62,48 @@ def create_app(config_name='default'):
 def register_blueprints(app):
     """Register application blueprints"""
     
-    from app.blueprints.main import bp as main_bp
-    app.register_blueprint(main_bp)
+    # Register modular blueprints
+    from app.modules.blog import blog_module
+    app.register_blueprint(blog_module.blueprint)
     
-    from app.blueprints.auth import bp as auth_bp
-    app.register_blueprint(auth_bp, url_prefix='/auth')
+    from app.modules.auth import auth_module
+    app.register_blueprint(auth_module.blueprint, url_prefix='/auth')
     
-    from app.blueprints.dashboard import bp as dashboard_bp
-    app.register_blueprint(dashboard_bp, url_prefix='/dashboard')
+    from app.modules.dashboard import dashboard_module
+    app.register_blueprint(dashboard_module.blueprint, url_prefix='/dashboard')
     
-    from app.blueprints.api import bp as api_bp
-    app.register_blueprint(api_bp, url_prefix='/api')
-    
-    from app.blueprints.admin import bp as admin_bp
-    app.register_blueprint(admin_bp, url_prefix='/admin')
+    from app.modules.media import media_module
+    app.register_blueprint(media_module.blueprint, url_prefix='/media')
 
 def register_context_processors(app):
     """Register template context processors"""
     
     @app.context_processor
     def inject_global_vars():
-        from app.utils.tenant import get_current_tenant
-        from app.models.setting import Setting
-        from app.models.category import Category
+        from app.models import Setting, Category, Post
+        from flask_login import current_user
         
-        tenant = get_current_tenant()
+        # Get blog settings
         settings = {}
-        tenant_categories = []
+        for setting in Setting.query.all():
+            settings[setting.key] = setting.value
         
-        if tenant:
-            # Requery tenant to ensure it's bound to current session
-            from app.models.tenant import Tenant
-            tenant = Tenant.query.get(tenant.id)
+        # Get active categories for navigation
+        categories = Category.query.filter_by(is_active=True).order_by(Category.sort_order).limit(10).all()
+        
+        # Helper functions for templates
+        def get_categories():
+            return categories
             
-            # Get tenant-specific settings
-            tenant_settings = Setting.query.filter_by(tenant_id=tenant.id).all()
-            settings = {s.key: s.value for s in tenant_settings}
-            
-            # Get active categories for navigation
-            tenant_categories = Category.query.filter_by(
-                tenant_id=tenant.id, 
-                is_active=True
-            ).limit(10).all()
+        def get_recent_posts(limit=5):
+            return Post.query.filter_by(status='published').order_by(
+                Post.published_at.desc()
+            ).limit(limit).all()
         
         return {
-            'current_tenant': tenant,
-            'tenant_settings': settings,
-            'tenant_categories': tenant_categories,
+            'blog_settings': settings,
+            'get_categories': get_categories,
+            'get_recent_posts': get_recent_posts,
             'google_analytics_id': app.config.get('GOOGLE_ANALYTICS_ID'),
         }
 

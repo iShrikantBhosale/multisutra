@@ -1,0 +1,175 @@
+<!-- UI Button Component -->
+<!-- Reusable button with consistent styling -->
+
+{% macro button(text, type="button", variant="primary", size="md", href=None, class="", onclick="", disabled=False, icon=None) %}
+  {% if href %}
+    <a href="{{ href }}" 
+       class="btn btn-{{ variant }} btn-{{ size }} {{ class }}"
+       {% if onclick %}onclick="{{ onclick }}"{% endif %}
+       {% if disabled %}aria-disabled="true" tabindex="-1"{% endif %}>
+      {% if icon %}<i class="{{ icon }}"></i> {% endif %}{{ text }}
+    </a>
+  {% else %}
+    <button type="{{ type }}" 
+            class="btn btn-{{ variant }} btn-{{ size }} {{ class }}"
+            {% if onclick %}onclick="{{ onclick }}"{% endif %}
+            {% if disabled %}disabled{% endif %}>
+      {% if icon %}<i class="{{ icon }}"></i> {% endif %}{{ text }}
+    </button>
+  {% endif %}
+{% endmacro %}
+
+<!-- Status Badge Component -->
+{% macro status_badge(status, text=None) %}
+  {% set badge_class = {
+    'published': 'success',
+    'draft': 'secondary',
+    'archived': 'warning',
+    'pending': 'warning',
+    'approved': 'success',
+    'rejected': 'danger'
+  }.get(status, 'secondary') %}
+  
+  <span class="badge bg-{{ badge_class }}">{{ text or status.title() }}</span>
+{% endmacro %}
+
+<!-- Loading Spinner Component -->
+{% macro loading_spinner(size="sm", text="") %}
+  <div class="d-flex align-items-center">
+    <div class="spinner-border spinner-border-{{ size }}" role="status">
+      <span class="visually-hidden">Loading...</span>
+    </div>
+    {% if text %}
+      <span class="ms-2">{{ text }}</span>
+    {% endif %}
+  </div>
+{% endmacro %}
+
+<!-- Alert Component -->
+{% macro alert(message, type="info", dismissible=True, icon=None) %}
+  <div class="alert alert-{{ type }} {% if dismissible %}alert-dismissible{% endif %} fade show" role="alert">
+    {% if icon %}<i class="{{ icon }}"></i> {% endif %}{{ message }}
+    {% if dismissible %}
+      <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    {% endif %}
+  </div>
+{% endmacro %}
+
+<!-- Pagination Component -->
+{% macro pagination(pagination, endpoint, **kwargs) %}
+  {% if pagination.pages > 1 %}
+    <nav aria-label="Page navigation">
+      <ul class="pagination justify-content-center">
+        <!-- Previous -->
+        {% if pagination.has_prev %}
+          <li class="page-item">
+            <a class="page-link" href="{{ url_for(endpoint, page=pagination.prev_num, **kwargs) }}">
+              <i class="fas fa-chevron-left"></i> Previous
+            </a>
+          </li>
+        {% else %}
+          <li class="page-item disabled">
+            <span class="page-link"><i class="fas fa-chevron-left"></i> Previous</span>
+          </li>
+        {% endif %}
+
+        <!-- Page numbers -->
+        {% for page_num in pagination.iter_pages() %}
+          {% if page_num %}
+            {% if page_num != pagination.page %}
+              <li class="page-item">
+                <a class="page-link" href="{{ url_for(endpoint, page=page_num, **kwargs) }}">{{ page_num }}</a>
+              </li>
+            {% else %}
+              <li class="page-item active">
+                <span class="page-link">{{ page_num }}</span>
+              </li>
+            {% endif %}
+          {% else %}
+            <li class="page-item disabled">
+              <span class="page-link">…</span>
+            </li>
+          {% endif %}
+        {% endfor %}
+
+        <!-- Next -->
+        {% if pagination.has_next %}
+          <li class="page-item">
+            <a class="page-link" href="{{ url_for(endpoint, page=pagination.next_num, **kwargs) }}">
+              Next <i class="fas fa-chevron-right"></i>
+            </a>
+          </li>
+        {% else %}
+          <li class="page-item disabled">
+            <span class="page-link">Next <i class="fas fa-chevron-right"></i></span>
+          </li>
+        {% endif %}
+      </ul>
+    </nav>
+  {% endif %}
+{% endmacro %}
+
+<!-- Card Component -->
+{% macro card(title="", body="", footer="", class="", header_class="", body_class="", footer_class="") %}
+  <div class="card {{ class }}">
+    {% if title %}
+      <div class="card-header {{ header_class }}">
+        <h5 class="card-title mb-0">{{ title }}</h5>
+      </div>
+    {% endif %}
+    
+    {% if body %}
+      <div class="card-body {{ body_class }}">
+        {{ body }}
+      </div>
+    {% endif %}
+    
+    {% if footer %}
+      <div class="card-footer {{ footer_class }}">
+        {{ footer }}
+      </div>
+    {% endif %}
+    
+    {% if caller %}
+      {{ caller() }}
+    {% endif %}
+  </div>
+{% endmacro %}
+
+<!-- Modal Component -->
+{% macro modal(id, title, size="", static=False) %}
+  <div class="modal fade" id="{{ id }}" tabindex="-1" {% if static %}data-bs-backdrop="static"{% endif %}>
+    <div class="modal-dialog {% if size %}modal-{{ size }}{% endif %}">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">{{ title }}</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          {{ caller() }}
+        </div>
+      </div>
+    </div>
+  </div>
+{% endmacro %}
+
+<!-- Breadcrumb Component -->
+{% macro breadcrumb(items) %}
+  <nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+      {% for item in items %}
+        {% if loop.last %}
+          <li class="breadcrumb-item active" aria-current="page">{{ item.text }}</li>
+        {% else %}
+          <li class="breadcrumb-item">
+            {% if item.url %}
+              <a href="{{ item.url }}">{{ item.text }}</a>
+            {% else %}
+              {{ item.text }}
+            {% endif %}
+          </li>
+        {% endif %}
+      {% endfor %}
+    </ol>
+  </nav>
+{% endmacro %}

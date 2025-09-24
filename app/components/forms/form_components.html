@@ -1,0 +1,317 @@
+<!-- Form Components -->
+<!-- Reusable form elements with consistent styling and validation -->
+
+<!-- Input Field Component -->
+{% macro input_field(name, label, type="text", value="", placeholder="", required=False, help_text="", error="", class="", readonly=False, disabled=False) %}
+  <div class="mb-3">
+    {% if label %}
+      <label for="{{ name }}" class="form-label">
+        {{ label }}
+        {% if required %}<span class="text-danger">*</span>{% endif %}
+      </label>
+    {% endif %}
+    
+    <input type="{{ type }}" 
+           class="form-control {{ class }} {% if error %}is-invalid{% endif %}" 
+           id="{{ name }}" 
+           name="{{ name }}" 
+           value="{{ value }}"
+           {% if placeholder %}placeholder="{{ placeholder }}"{% endif %}
+           {% if required %}required{% endif %}
+           {% if readonly %}readonly{% endif %}
+           {% if disabled %}disabled{% endif %}>
+    
+    {% if help_text %}
+      <div class="form-text">{{ help_text }}</div>
+    {% endif %}
+    
+    {% if error %}
+      <div class="invalid-feedback">{{ error }}</div>
+    {% endif %}
+  </div>
+{% endmacro %}
+
+<!-- Textarea Component -->
+{% macro textarea_field(name, label, value="", placeholder="", rows=3, required=False, help_text="", error="", class="", readonly=False, disabled=False) %}
+  <div class="mb-3">
+    {% if label %}
+      <label for="{{ name }}" class="form-label">
+        {{ label }}
+        {% if required %}<span class="text-danger">*</span>{% endif %}
+      </label>
+    {% endif %}
+    
+    <textarea class="form-control {{ class }} {% if error %}is-invalid{% endif %}" 
+              id="{{ name }}" 
+              name="{{ name }}" 
+              rows="{{ rows }}"
+              {% if placeholder %}placeholder="{{ placeholder }}"{% endif %}
+              {% if required %}required{% endif %}
+              {% if readonly %}readonly{% endif %}
+              {% if disabled %}disabled{% endif %}>{{ value }}</textarea>
+    
+    {% if help_text %}
+      <div class="form-text">{{ help_text }}</div>
+    {% endif %}
+    
+    {% if error %}
+      <div class="invalid-feedback">{{ error }}</div>
+    {% endif %}
+  </div>
+{% endmacro %}
+
+<!-- Select Dropdown Component -->
+{% macro select_field(name, label, options, selected="", required=False, help_text="", error="", class="", disabled=False, multiple=False) %}
+  <div class="mb-3">
+    {% if label %}
+      <label for="{{ name }}" class="form-label">
+        {{ label }}
+        {% if required %}<span class="text-danger">*</span>{% endif %}
+      </label>
+    {% endif %}
+    
+    <select class="form-select {{ class }} {% if error %}is-invalid{% endif %}" 
+            id="{{ name }}" 
+            name="{{ name }}"
+            {% if required %}required{% endif %}
+            {% if disabled %}disabled{% endif %}
+            {% if multiple %}multiple{% endif %}>
+      
+      {% if not multiple %}
+        <option value="">Choose...</option>
+      {% endif %}
+      
+      {% for option in options %}
+        <option value="{{ option.value }}" 
+                {% if option.value == selected or (multiple and option.value in selected) %}selected{% endif %}>
+          {{ option.text }}
+        </option>
+      {% endfor %}
+    </select>
+    
+    {% if help_text %}
+      <div class="form-text">{{ help_text }}</div>
+    {% endif %}
+    
+    {% if error %}
+      <div class="invalid-feedback">{{ error }}</div>
+    {% endif %}
+  </div>
+{% endmacro %}
+
+<!-- Checkbox Component -->
+{% macro checkbox_field(name, label, checked=False, value="1", help_text="", error="", class="", disabled=False) %}
+  <div class="mb-3 form-check">
+    <input class="form-check-input {% if error %}is-invalid{% endif %}" 
+           type="checkbox" 
+           value="{{ value }}" 
+           id="{{ name }}" 
+           name="{{ name }}"
+           {% if checked %}checked{% endif %}
+           {% if disabled %}disabled{% endif %}>
+    
+    <label class="form-check-label" for="{{ name }}">
+      {{ label }}
+    </label>
+    
+    {% if help_text %}
+      <div class="form-text">{{ help_text }}</div>
+    {% endif %}
+    
+    {% if error %}
+      <div class="invalid-feedback">{{ error }}</div>
+    {% endif %}
+  </div>
+{% endmacro %}
+
+<!-- Radio Button Group Component -->
+{% macro radio_group(name, label, options, selected="", required=False, help_text="", error="", inline=False) %}
+  <div class="mb-3">
+    {% if label %}
+      <label class="form-label">
+        {{ label }}
+        {% if required %}<span class="text-danger">*</span>{% endif %}
+      </label>
+    {% endif %}
+    
+    {% for option in options %}
+      <div class="form-check {% if inline %}form-check-inline{% endif %}">
+        <input class="form-check-input {% if error %}is-invalid{% endif %}" 
+               type="radio" 
+               name="{{ name }}" 
+               id="{{ name }}_{{ loop.index }}" 
+               value="{{ option.value }}"
+               {% if option.value == selected %}checked{% endif %}
+               {% if required %}required{% endif %}>
+        
+        <label class="form-check-label" for="{{ name }}_{{ loop.index }}">
+          {{ option.text }}
+        </label>
+      </div>
+    {% endfor %}
+    
+    {% if help_text %}
+      <div class="form-text">{{ help_text }}</div>
+    {% endif %}
+    
+    {% if error %}
+      <div class="invalid-feedback d-block">{{ error }}</div>
+    {% endif %}
+  </div>
+{% endmacro %}
+
+<!-- File Upload Component -->
+{% macro file_upload(name, label, accept="", required=False, help_text="", error="", multiple=False) %}
+  <div class="mb-3">
+    {% if label %}
+      <label for="{{ name }}" class="form-label">
+        {{ label }}
+        {% if required %}<span class="text-danger">*</span>{% endif %}
+      </label>
+    {% endif %}
+    
+    <input class="form-control {% if error %}is-invalid{% endif %}" 
+           type="file" 
+           id="{{ name }}" 
+           name="{{ name }}"
+           {% if accept %}accept="{{ accept }}"{% endif %}
+           {% if required %}required{% endif %}
+           {% if multiple %}multiple{% endif %}>
+    
+    {% if help_text %}
+      <div class="form-text">{{ help_text }}</div>
+    {% endif %}
+    
+    {% if error %}
+      <div class="invalid-feedback">{{ error }}</div>
+    {% endif %}
+  </div>
+{% endmacro %}
+
+<!-- Rich Text Editor Component -->
+{% macro rich_editor(name, label, value="", required=False, help_text="", error="", height="300px") %}
+  <div class="mb-3">
+    {% if label %}
+      <label for="{{ name }}" class="form-label">
+        {{ label }}
+        {% if required %}<span class="text-danger">*</span>{% endif %}
+      </label>
+    {% endif %}
+    
+    <div id="{{ name }}_editor" style="height: {{ height }};"></div>
+    <textarea id="{{ name }}" name="{{ name }}" style="display: none;" {% if required %}required{% endif %}>{{ value }}</textarea>
+    
+    {% if help_text %}
+      <div class="form-text">{{ help_text }}</div>
+    {% endif %}
+    
+    {% if error %}
+      <div class="text-danger">{{ error }}</div>
+    {% endif %}
+  </div>
+  
+  <!-- Initialize Quill editor -->
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      if (typeof Quill !== 'undefined') {
+        var quill = new Quill('#{{ name }}_editor', {
+          theme: 'snow',
+          modules: {
+            toolbar: [
+              [{ 'header': [1, 2, 3, false] }],
+              ['bold', 'italic', 'underline', 'strike'],
+              ['blockquote', 'code-block'],
+              [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+              [{ 'script': 'sub'}, { 'script': 'super' }],
+              [{ 'indent': '-1'}, { 'indent': '+1' }],
+              ['link', 'image', 'video'],
+              ['clean']
+            ]
+          }
+        });
+        
+        // Set initial content
+        quill.root.innerHTML = document.getElementById('{{ name }}').value;
+        
+        // Update hidden textarea when content changes
+        quill.on('text-change', function() {
+          document.getElementById('{{ name }}').value = quill.root.innerHTML;
+        });
+      }
+    });
+  </script>
+{% endmacro %}
+
+<!-- Color Picker Component -->
+{% macro color_picker(name, label, value="#007bff", required=False, help_text="", error="") %}
+  <div class="mb-3">
+    {% if label %}
+      <label for="{{ name }}" class="form-label">
+        {{ label }}
+        {% if required %}<span class="text-danger">*</span>{% endif %}
+      </label>
+    {% endif %}
+    
+    <div class="input-group">
+      <input type="color" 
+             class="form-control form-control-color {% if error %}is-invalid{% endif %}" 
+             id="{{ name }}" 
+             name="{{ name }}" 
+             value="{{ value }}"
+             {% if required %}required{% endif %}>
+      <input type="text" 
+             class="form-control" 
+             id="{{ name }}_text" 
+             value="{{ value }}" 
+             placeholder="#007bff">
+    </div>
+    
+    {% if help_text %}
+      <div class="form-text">{{ help_text }}</div>
+    {% endif %}
+    
+    {% if error %}
+      <div class="invalid-feedback">{{ error }}</div>
+    {% endif %}
+  </div>
+  
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      var colorInput = document.getElementById('{{ name }}');
+      var textInput = document.getElementById('{{ name }}_text');
+      
+      colorInput.addEventListener('change', function() {
+        textInput.value = this.value;
+      });
+      
+      textInput.addEventListener('change', function() {
+        if (/^#[0-9A-F]{6}$/i.test(this.value)) {
+          colorInput.value = this.value;
+        }
+      });
+    });
+  </script>
+{% endmacro %}
+
+<!-- Form Group Component -->
+{% macro form_group(title="", description="", class="") %}
+  <div class="mb-4 {{ class }}">
+    {% if title %}
+      <h5 class="form-section-title">{{ title }}</h5>
+    {% endif %}
+    {% if description %}
+      <p class="text-muted mb-3">{{ description }}</p>
+    {% endif %}
+    {{ caller() }}
+  </div>
+{% endmacro %}
+
+<!-- Submit Button Row -->
+{% macro submit_row(primary_text="Save", primary_class="btn-primary", secondary_text="Cancel", secondary_href="", secondary_class="btn-outline-secondary") %}
+  <div class="d-flex gap-2 justify-content-end">
+    {% if secondary_text and secondary_href %}
+      <a href="{{ secondary_href }}" class="btn {{ secondary_class }}">{{ secondary_text }}</a>
+    {% endif %}
+    <button type="submit" class="btn {{ primary_class }}">{{ primary_text }}</button>
+  </div>
+{% endmacro %}
