@@ -109,8 +109,38 @@ except Exception as e:
             'error': str(e),
             'environment': os.environ.get('FLASK_ENV', 'unknown'),
             'database_url': 'CONFIGURED' if os.environ.get('DATABASE_URL') else 'MISSING',
-            'port': os.environ.get('PORT', 'not set')
+            'port': os.environ.get('PORT', 'not set'),
+            'secret_key': 'CONFIGURED' if os.environ.get('SECRET_KEY') else 'MISSING'
         })
+    
+    @app.route('/env')
+    def env_info():
+        """Show environment variables (safe ones only)"""
+        safe_env = {}
+        for key, value in os.environ.items():
+            if not any(secret in key.upper() for secret in ['SECRET', 'PASSWORD', 'TOKEN', 'KEY']):
+                safe_env[key] = value[:50] + '...' if len(value) > 50 else value
+        return jsonify({
+            'environment_variables': safe_env,
+            'python_version': sys.version,
+            'working_directory': os.getcwd()
+        })
+    
+    @app.route('/test-db')
+    def test_database():
+        """Test database connectivity"""
+        try:
+            db_url = os.environ.get('DATABASE_URL', 'Not configured')
+            return jsonify({
+                'database_url_configured': bool(os.environ.get('DATABASE_URL')),
+                'database_type': 'PostgreSQL' if 'postgresql' in db_url.lower() else 'SQLite' if 'sqlite' in db_url.lower() else 'Unknown',
+                'status': 'Database connection test route (basic app mode)'
+            })
+        except Exception as db_e:
+            return jsonify({
+                'error': f'Database test failed: {str(db_e)}',
+                'database_url_configured': bool(os.environ.get('DATABASE_URL'))
+            })
     
     @app.route('/health')
     def health():

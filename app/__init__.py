@@ -84,18 +84,31 @@ def register_context_processors(app):
     def inject_global_vars():
         from app.utils.tenant import get_current_tenant
         from app.models.setting import Setting
+        from app.models.category import Category
         
         tenant = get_current_tenant()
         settings = {}
+        tenant_categories = []
         
         if tenant:
+            # Requery tenant to ensure it's bound to current session
+            from app.models.tenant import Tenant
+            tenant = Tenant.query.get(tenant.id)
+            
             # Get tenant-specific settings
             tenant_settings = Setting.query.filter_by(tenant_id=tenant.id).all()
             settings = {s.key: s.value for s in tenant_settings}
+            
+            # Get active categories for navigation
+            tenant_categories = Category.query.filter_by(
+                tenant_id=tenant.id, 
+                is_active=True
+            ).limit(10).all()
         
         return {
             'current_tenant': tenant,
             'tenant_settings': settings,
+            'tenant_categories': tenant_categories,
             'google_analytics_id': app.config.get('GOOGLE_ANALYTICS_ID'),
         }
 
