@@ -1,0 +1,195 @@
+<!-- Button Component -->
+{% macro button(text, href="#", type="button", variant="primary", size="", icon="", full_width=False, disabled=False, **kwargs) -%}
+    {% set classes = ["btn", "btn-" + variant] %}
+    {% if size %}{% set classes = classes + ["btn-" + size] %}{% endif %}
+    {% if full_width %}{% set classes = classes + ["w-100"] %}{% endif %}
+    {% if disabled %}{% set classes = classes + ["disabled"] %}{% endif %}
+    
+    {% if type == "submit" or type == "button" %}
+        <button type="{{ type }}" class="{{ classes|join(' ') }}" {{ 'disabled' if disabled else '' }} {% for k, v in kwargs.items() %}{{ k }}="{{ v }}"{% endfor %}>
+            {% if icon %}<i class="{{ icon }}"></i> {% endif %}{{ text }}
+        </button>
+    {% else %}
+        <a href="{{ href }}" class="{{ classes|join(' ') }}" {% if disabled %}aria-disabled="true" tabindex="-1"{% endif %} {% for k, v in kwargs.items() %}{{ k }}="{{ v }}"{% endfor %}>
+            {% if icon %}<i class="{{ icon }}"></i> {% endif %}{{ text }}
+        </a>
+    {% endif %}
+{%- endmacro %}
+
+<!-- Alert Component -->
+{% macro alert(message, type="info", dismissible=True) -%}
+    {% set alert_class = "alert-" + ("danger" if type == "error" else type) %}
+    <div class="alert {{ alert_class }} {% if dismissible %}alert-dismissible fade show{% endif %}" role="alert">
+        {{ message }}
+        {% if dismissible %}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        {% endif %}
+    </div>
+{%- endmacro %}
+
+<!-- Card Component -->
+{% macro card(title="", icon="", body_class="") -%}
+    <div class="card">
+        {% if title %}
+        <div class="card-header">
+            {% if icon %}<i class="{{ icon }}"></i> {% endif %}{{ title }}
+        </div>
+        {% endif %}
+        <div class="card-body {{ body_class }}">
+            {{ caller() }}
+        </div>
+    </div>
+{%- endmacro %}
+
+<!-- Status Badge Component -->
+{% macro status_badge(text, variant="primary") -%}
+    <span class="badge bg-{{ variant }}">{{ text }}</span>
+{%- endmacro %}
+
+<!-- Metric Card Component -->
+{% macro metric_card(title, value, icon="fas fa-chart-line", color="primary") -%}
+    <div class="card text-center">
+        <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <div>
+                    <h6 class="card-subtitle text-muted mb-0">{{ title }}</h6>
+                </div>
+                <div>
+                    <i class="{{ icon }} text-{{ color }}"></i>
+                </div>
+            </div>
+            <h3 class="card-title mb-0">{{ value }}</h3>
+        </div>
+    </div>
+{%- endmacro %}
+
+<!-- Pagination Component -->
+{% macro pagination(pagination_obj, endpoint, **kwargs) -%}
+    {% if pagination_obj.pages > 1 %}
+    <nav aria-label="Page navigation">
+        <ul class="pagination justify-content-center">
+            <!-- Previous Page -->
+            <li class="page-item {{ 'disabled' if not pagination_obj.has_prev else '' }}">
+                {% if pagination_obj.has_prev %}
+                    <a class="page-link" href="{{ url_for(endpoint, page=pagination_obj.prev_num, **kwargs) }}">
+                        <i class="fas fa-chevron-left"></i>
+                    </a>
+                {% else %}
+                    <span class="page-link">
+                        <i class="fas fa-chevron-left"></i>
+                    </span>
+                {% endif %}
+            </li>
+
+            <!-- Page Numbers -->
+            {% for page_num in pagination_obj.iter_pages(left_edge=1, right_edge=1, left_current=1, right_current=2) %}
+                {% if page_num %}
+                    {% if page_num != pagination_obj.page %}
+                        <li class="page-item">
+                            <a class="page-link" href="{{ url_for(endpoint, page=page_num, **kwargs) }}">{{ page_num }}</a>
+                        </li>
+                    {% else %}
+                        <li class="page-item active">
+                            <span class="page-link">{{ page_num }}</span>
+                        </li>
+                    {% endif %}
+                {% else %}
+                    <li class="page-item disabled">
+                        <span class="page-link">…</span>
+                    </li>
+                {% endif %}
+            {% endfor %}
+
+            <!-- Next Page -->
+            <li class="page-item {{ 'disabled' if not pagination_obj.has_next else '' }}">
+                {% if pagination_obj.has_next %}
+                    <a class="page-link" href="{{ url_for(endpoint, page=pagination_obj.next_num, **kwargs) }}">
+                        <i class="fas fa-chevron-right"></i>
+                    </a>
+                {% else %}
+                    <span class="page-link">
+                        <i class="fas fa-chevron-right"></i>
+                    </span>
+                {% endif %}
+            </li>
+        </ul>
+    </nav>
+    {% endif %}
+{%- endmacro %}
+
+<!-- Loading Spinner Component -->
+{% macro loading_spinner(size="", text="Loading...") -%}
+    <div class="d-flex justify-content-center align-items-center">
+        <div class="spinner-border text-primary {{ 'spinner-border-' + size if size else '' }}" role="status">
+            <span class="visually-hidden">{{ text }}</span>
+        </div>
+        {% if text %}
+            <span class="ms-2">{{ text }}</span>
+        {% endif %}
+    </div>
+{%- endmacro %}
+
+<!-- Empty State Component -->
+{% macro empty_state(icon="fas fa-inbox", title="No items found", description="", action_text="", action_href="#") -%}
+    <div class="text-center py-5">
+        <i class="{{ icon }} fa-3x text-muted mb-3"></i>
+        <h5>{{ title }}</h5>
+        {% if description %}
+            <p class="text-muted">{{ description }}</p>
+        {% endif %}
+        {% if action_text %}
+            {{ button(action_text, href=action_href, variant="primary") }}
+        {% endif %}
+    </div>
+{%- endmacro %}
+
+<!-- Modal Component -->
+{% macro modal(id, title="", size="") -%}
+    <div class="modal fade" id="{{ id }}" tabindex="-1" aria-labelledby="{{ id }}Label" aria-hidden="true">
+        <div class="modal-dialog {{ 'modal-' + size if size else '' }}">
+            <div class="modal-content">
+                {% if title %}
+                <div class="modal-header">
+                    <h5 class="modal-title" id="{{ id }}Label">{{ title }}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                {% endif %}
+                <div class="modal-body">
+                    {{ caller() }}
+                </div>
+            </div>
+        </div>
+    </div>
+{%- endmacro %}
+
+<!-- Breadcrumb Component -->
+{% macro breadcrumb(items) -%}
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            {% for item in items %}
+                <li class="breadcrumb-item {{ 'active' if loop.last else '' }}">
+                    {% if not loop.last and item.href %}
+                        <a href="{{ item.href }}">{{ item.text }}</a>
+                    {% else %}
+                        {{ item.text }}
+                    {% endif %}
+                </li>
+            {% endfor %}
+        </ol>
+    </nav>
+{%- endmacro %}
+
+<!-- Progress Bar Component -->
+{% macro progress_bar(value, max=100, variant="primary", striped=False, animated=False) -%}
+    {% set percentage = (value / max * 100) | round(1) %}
+    <div class="progress">
+        <div class="progress-bar bg-{{ variant }} {{ 'progress-bar-striped' if striped else '' }} {{ 'progress-bar-animated' if animated else '' }}" 
+             role="progressbar" 
+             style="width: {{ percentage }}%" 
+             aria-valuenow="{{ value }}" 
+             aria-valuemin="0" 
+             aria-valuemax="{{ max }}">
+            {{ percentage }}%
+        </div>
+    </div>
+{%- endmacro %}

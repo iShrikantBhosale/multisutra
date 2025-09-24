@@ -1,0 +1,231 @@
+<!-- Render Field Component -->
+{% macro render_field(field, label_visible=True, help_text="", placeholder="", **kwargs) -%}
+    <div class="mb-3">
+        {% if label_visible and field.label %}
+            {{ field.label(class="form-label") }}
+        {% endif %}
+        
+        {% set css_class = kwargs.pop('class', 'form-control') %}
+        {% if field.errors %}
+            {% set css_class = css_class + ' is-invalid' %}
+        {% endif %}
+        
+        {% if field.type == 'TextAreaField' %}
+            {{ field(class=css_class, placeholder=placeholder, rows=kwargs.get('rows', 4), **kwargs) }}
+        {% elif field.type == 'SelectField' %}
+            {{ field(class='form-select' if 'form-control' in css_class else css_class, **kwargs) }}
+        {% elif field.type == 'BooleanField' %}
+            <div class="form-check">
+                {{ field(class="form-check-input", **kwargs) }}
+                {% if field.label %}
+                    {{ field.label(class="form-check-label") }}
+                {% endif %}
+            </div>
+        {% elif field.type == 'FileField' %}
+            {{ field(class='form-control', accept=kwargs.get('accept', ''), **kwargs) }}
+        {% else %}
+            {{ field(class=css_class, placeholder=placeholder, **kwargs) }}
+        {% endif %}
+        
+        {% if help_text %}
+            <div class="form-text">{{ help_text }}</div>
+        {% endif %}
+        
+        {% if field.errors %}
+            {% for error in field.errors %}
+                <div class="invalid-feedback">{{ error }}</div>
+            {% endfor %}
+        {% endif %}
+    </div>
+{%- endmacro %}
+
+<!-- Render Form Component -->
+{% macro render_form(form, submit_text="Submit", cancel_href="", method="POST") -%}
+    <form method="{{ method }}" novalidate>
+        {{ form.hidden_tag() }}
+        
+        {{ caller() }}
+        
+        <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-primary">
+                <i class="fas fa-save"></i> {{ submit_text }}
+            </button>
+            {% if cancel_href %}
+                <a href="{{ cancel_href }}" class="btn btn-secondary">
+                    <i class="fas fa-times"></i> Cancel
+                </a>
+            {% endif %}
+        </div>
+    </form>
+{%- endmacro %}
+
+<!-- Input Group Component -->
+{% macro input_group(field, prepend="", append="", **kwargs) -%}
+    <div class="mb-3">
+        {% if field.label %}
+            {{ field.label(class="form-label") }}
+        {% endif %}
+        
+        <div class="input-group">
+            {% if prepend %}
+                <span class="input-group-text">{{ prepend | safe }}</span>
+            {% endif %}
+            
+            {% set css_class = kwargs.pop('class', 'form-control') %}
+            {% if field.errors %}
+                {% set css_class = css_class + ' is-invalid' %}
+            {% endif %}
+            
+            {{ field(class=css_class, **kwargs) }}
+            
+            {% if append %}
+                <span class="input-group-text">{{ append | safe }}</span>
+            {% endif %}
+            
+            {% if field.errors %}
+                {% for error in field.errors %}
+                    <div class="invalid-feedback">{{ error }}</div>
+                {% endfor %}
+            {% endif %}
+        </div>
+    </div>
+{%- endmacro %}
+
+<!-- Search Form Component -->
+{% macro search_form(action="", method="GET", placeholder="Search...", button_text="Search") -%}
+    <form class="d-flex" action="{{ action }}" method="{{ method }}">
+        <input class="form-control me-2" type="search" name="q" placeholder="{{ placeholder }}" aria-label="Search" value="{{ request.args.get('q', '') }}">
+        <button class="btn btn-outline-primary" type="submit">
+            <i class="fas fa-search"></i> {{ button_text }}
+        </button>
+    </form>
+{%- endmacro %}
+
+<!-- File Upload Component -->
+{% macro file_upload(field, accept="", multiple=False, preview=False, **kwargs) -%}
+    <div class="mb-3">
+        {% if field.label %}
+            {{ field.label(class="form-label") }}
+        {% endif %}
+        
+        {% set css_class = kwargs.pop('class', 'form-control') %}
+        {% if field.errors %}
+            {% set css_class = css_class + ' is-invalid' %}
+        {% endif %}
+        
+        {{ field(class=css_class, accept=accept, multiple=multiple, **kwargs) }}
+        
+        {% if preview %}
+            <div class="mt-2" id="file-preview-{{ field.name }}" style="display: none;">
+                <img id="preview-{{ field.name }}" class="img-thumbnail" style="max-height: 200px;">
+            </div>
+            <script>
+                document.getElementById('{{ field.id }}').addEventListener('change', function(e) {
+                    const file = e.target.files[0];
+                    const preview = document.getElementById('preview-{{ field.name }}');
+                    const container = document.getElementById('file-preview-{{ field.name }}');
+                    
+                    if (file && file.type.startsWith('image/')) {
+                        const reader = new FileReader();
+                        reader.onload = function(e) {
+                            preview.src = e.target.result;
+                            container.style.display = 'block';
+                        };
+                        reader.readAsDataURL(file);
+                    } else {
+                        container.style.display = 'none';
+                    }
+                });
+            </script>
+        {% endif %}
+        
+        {% if field.errors %}
+            {% for error in field.errors %}
+                <div class="invalid-feedback">{{ error }}</div>
+            {% endfor %}
+        {% endif %}
+    </div>
+{%- endmacro %}
+
+<!-- Rich Text Editor Component -->
+{% macro rich_text_editor(field, height="300px", **kwargs) -%}
+    <div class="mb-3">
+        {% if field.label %}
+            {{ field.label(class="form-label") }}
+        {% endif %}
+        
+        {% set css_class = kwargs.pop('class', 'form-control') %}
+        {% if field.errors %}
+            {% set css_class = css_class + ' is-invalid' %}
+        {% endif %}
+        
+        {{ field(class=css_class, style="height: " + height, **kwargs) }}
+        
+        {% if field.errors %}
+            {% for error in field.errors %}
+                <div class="invalid-feedback">{{ error }}</div>
+            {% endfor %}
+        {% endif %}
+        
+        <!-- Optional: Add rich text editor initialization -->
+        <script>
+            // You can add TinyMCE, CKEditor, or other rich text editor initialization here
+        </script>
+    </div>
+{%- endmacro %}
+
+<!-- Checkbox Group Component -->
+{% macro checkbox_group(field, options, **kwargs) -%}
+    <div class="mb-3">
+        {% if field.label %}
+            <label class="form-label">{{ field.label.text }}</label>
+        {% endif %}
+        
+        {% for option in options %}
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" 
+                       name="{{ field.name }}" 
+                       value="{{ option.value }}" 
+                       id="{{ field.name }}_{{ option.value }}"
+                       {% if option.value in field.data %}checked{% endif %}>
+                <label class="form-check-label" for="{{ field.name }}_{{ option.value }}">
+                    {{ option.label }}
+                </label>
+            </div>
+        {% endfor %}
+        
+        {% if field.errors %}
+            {% for error in field.errors %}
+                <div class="text-danger">{{ error }}</div>
+            {% endfor %}
+        {% endif %}
+    </div>
+{%- endmacro %}
+
+<!-- Radio Group Component -->
+{% macro radio_group(field, options, inline=False, **kwargs) -%}
+    <div class="mb-3">
+        {% if field.label %}
+            <label class="form-label">{{ field.label.text }}</label>
+        {% endif %}
+        
+        {% for option in options %}
+            <div class="form-check {{ 'form-check-inline' if inline else '' }}">
+                <input class="form-check-input" type="radio" 
+                       name="{{ field.name }}" 
+                       value="{{ option.value }}" 
+                       id="{{ field.name }}_{{ option.value }}"
+                       {% if option.value == field.data %}checked{% endif %}>
+                <label class="form-check-label" for="{{ field.name }}_{{ option.value }}">
+                    {{ option.label }}
+                </label>
+            </div>
+        {% endfor %}
+        
+        {% if field.errors %}
+            {% for error in field.errors %}
+                <div class="text-danger">{{ error }}</div>
+            {% endfor %}
+        {% endif %}
+    </div>
+{%- endmacro %}
