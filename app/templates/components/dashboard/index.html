@@ -1,0 +1,147 @@
+{% from 'components/layouts/layouts.html' import dashboard_layout %}
+{% from 'components/ui/components.html' import card, button, status_badge, metric_card %}
+
+{% call dashboard_layout(title="Dashboard", active_nav="dashboard") %}
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1>Dashboard</h1>
+                <div>
+                    {{ button("New Post", href=url_for('dashboard.create_post'), variant="primary", icon="fas fa-plus") }}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stats Row -->
+    <div class="row mb-4">
+        <div class="col-md-3 mb-3">
+            {{ metric_card("Total Posts", stats.total_posts, "fas fa-file-alt", "primary") }}
+        </div>
+        <div class="col-md-3 mb-3">
+            {{ metric_card("Published", stats.published_posts, "fas fa-eye", "success") }}
+        </div>
+        <div class="col-md-3 mb-3">
+            {{ metric_card("Drafts", stats.draft_posts, "fas fa-edit", "warning") }}
+        </div>
+        <div class="col-md-3 mb-3">
+            {{ metric_card("Total Views", stats.total_views, "fas fa-chart-line", "info") }}
+        </div>
+    </div>
+
+    <!-- Recent Posts -->
+    <div class="row">
+        <div class="col-lg-8">
+            {% call card("Recent Posts", icon="fas fa-file-alt") %}
+                {% if recent_posts %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Title</th>
+                                    <th>Status</th>
+                                    <th>Views</th>
+                                    <th>Date</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for post in recent_posts %}
+                                <tr>
+                                    <td>
+                                        <strong>{{ post.title }}</strong>
+                                        {% if post.category %}
+                                            <br><small class="text-muted">{{ post.category.name }}</small>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if post.published %}
+                                            {{ status_badge("Published", "success") }}
+                                        {% else %}
+                                            {{ status_badge("Draft", "warning") }}
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ post.view_count }}</td>
+                                    <td>
+                                        <small>
+                                            {% if post.published %}
+                                                {{ post.published_at.strftime('%b %d, %Y') }}
+                                            {% else %}
+                                                {{ post.updated_at.strftime('%b %d, %Y') }}
+                                            {% endif %}
+                                        </small>
+                                    </td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm">
+                                            {% if post.published %}
+                                                <a href="{{ url_for('blog.post', slug=post.slug) }}" 
+                                                   class="btn btn-outline-primary" 
+                                                   title="View">
+                                                    <i class="fas fa-eye"></i>
+                                                </a>
+                                            {% endif %}
+                                            <a href="{{ url_for('dashboard.edit_post', id=post.id) }}" 
+                                               class="btn btn-outline-secondary" 
+                                               title="Edit">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="text-center mt-3">
+                        {{ button("View All Posts", href=url_for('dashboard.posts'), variant="outline-primary") }}
+                    </div>
+                {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-file-alt fa-3x text-muted mb-3"></i>
+                        <h5>No posts yet</h5>
+                        <p class="text-muted">Create your first blog post to get started!</p>
+                        {{ button("Create Post", href=url_for('dashboard.create_post'), variant="primary", icon="fas fa-plus") }}
+                    </div>
+                {% endif %}
+            {% endcall %}
+        </div>
+
+        <div class="col-lg-4">
+            <!-- Quick Actions -->
+            {% call card("Quick Actions", icon="fas fa-bolt") %}
+                <div class="d-grid gap-2">
+                    {{ button("New Post", href=url_for('dashboard.create_post'), variant="primary", full_width=True, icon="fas fa-plus") }}
+                    {{ button("Manage Categories", href=url_for('dashboard.categories'), variant="outline-primary", full_width=True, icon="fas fa-tags") }}
+                    {{ button("Media Library", href=url_for('media.library'), variant="outline-primary", full_width=True, icon="fas fa-images") }}
+                    {{ button("Settings", href=url_for('dashboard.settings'), variant="outline-secondary", full_width=True, icon="fas fa-cog") }}
+                </div>
+            {% endcall %}
+
+            <!-- Recent Activity -->
+            {% call card("Recent Activity", icon="fas fa-clock") %}
+                {% if recent_activity %}
+                    <div class="activity-feed">
+                        {% for activity in recent_activity %}
+                        <div class="activity-item mb-3 pb-3 border-bottom">
+                            <div class="d-flex">
+                                <div class="activity-icon me-3">
+                                    <i class="fas fa-{{ activity.icon }} text-{{ activity.color }}"></i>
+                                </div>
+                                <div class="activity-content">
+                                    <p class="mb-1">{{ activity.message }}</p>
+                                    <small class="text-muted">{{ activity.timestamp.strftime('%b %d, %Y at %I:%M %p') }}</small>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <div class="text-center py-3">
+                        <i class="fas fa-clock fa-2x text-muted mb-2"></i>
+                        <p class="text-muted mb-0">No recent activity</p>
+                    </div>
+                {% endif %}
+            {% endcall %}
+        </div>
+    </div>
+{% endcall %}
