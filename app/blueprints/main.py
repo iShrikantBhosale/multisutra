@@ -19,18 +19,18 @@ def health_check():
 
 @bp.route('/setup', methods=['GET', 'POST'])
 def quick_setup():
-    """Quick setup for first-time deployment"""
+    """Quick setup for first-time deployment - works without existing tenant"""
     from app.models.tenant import Tenant
     from app.models.user import User
     
     if request.method == 'POST':
         # Create default tenant if it doesn't exist
-        tenant = Tenant.query.filter_by(subdomain='blog').first()
+        tenant = Tenant.query.filter_by(subdomain='main').first()
         if not tenant:
             tenant = Tenant(
-                name='My Blog',
-                subdomain='blog',
-                domain=request.host.split('.')[1:] if '.' in request.host else request.host,
+                name='MultiSutra Blog',
+                subdomain='main',
+                domain=request.host,
                 is_active=True,
                 created_at=datetime.utcnow()
             )

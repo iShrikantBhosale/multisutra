@@ -104,16 +104,29 @@ def register_error_handlers(app):
     
     @app.errorhandler(404)
     def not_found_error(error):
-        from flask import render_template
-        return render_template('errors/404.html'), 404
+        try:
+            from flask import render_template
+            return render_template('errors/404.html'), 404
+        except:
+            return '<h1>404 - Page Not Found</h1><p><a href="/">Go Home</a></p>', 404
     
     @app.errorhandler(500)
     def internal_error(error):
-        from flask import render_template
-        db.session.rollback()
-        return render_template('errors/500.html'), 500
+        try:
+            from flask import render_template
+            db.session.rollback()
+            # Log the actual error for debugging
+            app.logger.error(f'Server Error: {error}', exc_info=True)
+            return render_template('errors/500.html'), 500
+        except Exception as e:
+            # Fallback if template rendering fails
+            app.logger.error(f'Error handler failed: {e}', exc_info=True)
+            return '<h1>500 - Internal Server Error</h1><p>Something went wrong. <a href="/">Go Home</a></p>', 500
     
     @app.errorhandler(403)
     def forbidden_error(error):
-        from flask import render_template
-        return render_template('errors/403.html'), 403
+        try:
+            from flask import render_template
+            return render_template('errors/403.html'), 403
+        except:
+            return '<h1>403 - Access Forbidden</h1><p><a href="/">Go Home</a></p>', 403

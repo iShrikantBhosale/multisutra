@@ -1,0 +1,11 @@
+# Render deployment configuration - SIMPLE TEST
+
+services:
+  - type: web
+    name: multisutra-test
+    env: python
+    buildCommand: "pip install flask gunicorn"
+    startCommand: "gunicorn --bind 0.0.0.0:$PORT --workers 1 --timeout 30 --access-logfile - --error-logfile - simple_test:app"
+    envVars:
+      - key: FLASK_ENV
+        value: production

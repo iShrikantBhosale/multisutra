@@ -16,8 +16,14 @@ def get_subdomain_from_request():
     if ':' in host:
         host = host.split(':')[0]
     
+    # Handle Render.com domains specially
+    if '.onrender.com' in host:
+        # For Render: app-name.onrender.com - no subdomain support
+        # We'll treat the entire Render domain as the main site
+        return 'main'  # Default tenant for Render deployments
+    
     # Get main domain from config
-    main_domain = current_app.config.get('MAIN_DOMAIN', 'multisutra.com')
+    main_domain = current_app.config.get('MAIN_DOMAIN', 'localhost')
     
     # Check if it's a subdomain
     if host.endswith(f'.{main_domain}'):
@@ -25,9 +31,9 @@ def get_subdomain_from_request():
         # Validate subdomain (basic validation)
         if subdomain and subdomain.replace('-', '').replace('_', '').isalnum():
             return subdomain
-    elif host == main_domain:
-        # Main domain - no tenant
-        return None
+    elif host == main_domain or 'localhost' in host or 'onrender.com' in host:
+        # Main domain, localhost, or Render - use default tenant
+        return 'main'
     
     return None
 
